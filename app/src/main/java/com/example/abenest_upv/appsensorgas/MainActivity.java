@@ -24,6 +24,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -34,6 +35,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView elTexto;
     private Button elBotonEnviar;
     private EditText input;
+
+    private List<Medicion> mediciones = new ArrayList<>();
 
     //-------------------------------------------------------------------------
     //-------------------------------------------------------------------------
@@ -170,6 +173,7 @@ public class MainActivity extends AppCompatActivity {
                 super.onScanResult(callbackType, resultado);
                 Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): onScanResult() ");
                 mostrarInformacionDispositivoBTLE( resultado );
+                guardarNuevaMedida(resultado);
             }
 
             @Override
@@ -272,6 +276,65 @@ public class MainActivity extends AppCompatActivity {
 
     } // ()
 
+    private void guardarNuevaMedida(ScanResult result){
+
+        Medicion medicion = new Medicion();
+        byte[] bytes = result.getScanRecord().getBytes();
+        TramaIBeacon tramaIBeacon = new TramaIBeacon(bytes);
+
+        BluetoothDevice bluetoothDevice = result.getDevice();
+
+        medicion.setNombreSensor(bluetoothDevice.getName());
+        medicion.setMacSensor(bluetoothDevice.getAddress());
+        medicion.setFecha();
+        medicion.setUuidSensor(Utilidades.bytesToString(tramaIBeacon.getUUID()));
+        medicion.setMedida(Utilidades.bytesToInt(tramaIBeacon.getMinor()));
+
+        //Dins de Major agafar el primer byte i transformar-lo a int per a determinar el tipus de mesura
+        byte[] tipoMedida =  Arrays.copyOfRange(tramaIBeacon.getMajor(), 0, 1 );
+        medicion.setTipo(Utilidades.bytesToInt(tipoMedida));
+
+        //De moment es posen lat i log del Campus de Gandia
+        medicion.setLatitud(38.995860);
+        medicion.setLongitud(-0.166152);
+
+        //Afegim a l'array si  la mesura no està incorporada
+        if(!comprobarSiYaEstaLaMedicion(medicion)){
+            mediciones.add(medicion);
+        }
+
+    }
+
+    private boolean comprobarSiYaEstaLaMedicion(Medicion m){
+        if(this.mediciones.size() == 0){
+            return false;
+        }
+
+        for (Medicion medicion : this.mediciones){
+            if(m.getTipo().equals(medicion.getTipo()) && (m.getFecha() < medicion.getFecha()+5000)){
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public void verArrayMedidas(View v){
+        Log.d(ETIQUETA_LOG, " Longitud de la lista  = " + this.mediciones.size());
+        for (Medicion m : this.mediciones){
+            Log.d(ETIQUETA_LOG, " ****************************************************");
+            Log.d(ETIQUETA_LOG, " nombre  = " + m.getNombreSensor());
+            Log.d(ETIQUETA_LOG, " mac  = " + m.getMacSensor());
+            Log.d(ETIQUETA_LOG, " uuid  = " + m.getUuidSensor());
+            Log.d(ETIQUETA_LOG, " fecha  = " + m.getFecha());
+            Log.d(ETIQUETA_LOG, " tipo  = " + m.getTipo());
+            Log.d(ETIQUETA_LOG, " medida  = " + m.getMedida());
+            Log.d(ETIQUETA_LOG, " lat  = " + m.getLatitud());
+            Log.d(ETIQUETA_LOG, " long  = " + m.getLongitud());
+            Log.d(ETIQUETA_LOG, " ****************************************************");
+        }
+    }
+
 
 
 
@@ -279,7 +342,7 @@ public class MainActivity extends AppCompatActivity {
     //-------------------------------------------------------------------------
     //PART ENVIO SERVIDOR REST
     //-------------------------------------------------------------------------
-    public void boton_enviar_pulsado() {
+    public void boton_enviar_pulsado(View v) {
         Log.d("clienterestandroid", "boton_enviar_pulsado");
         this.elTexto.setText("pulsado");
 
