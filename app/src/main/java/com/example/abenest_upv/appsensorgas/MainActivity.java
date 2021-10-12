@@ -1,100 +1,47 @@
 package com.example.abenest_upv.appsensorgas;
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 import android.Manifest;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.le.BluetoothLeScanner;
-import android.bluetooth.le.ScanCallback;
-import android.bluetooth.le.ScanFilter;
-import android.bluetooth.le.ScanResult;
-import android.bluetooth.le.ScanSettings;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
 
-import androidx.annotation.Nullable;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.viewpager2.widget.ViewPager2;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.tabs.TabLayoutMediator;
 
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 public class MainActivity extends AppCompatActivity {
 
-    private TextView elTexto;
-    private Button elBotonEnviar;
-    private EditText input;
+    private String[] nombres = new String[]{"Buscar dispositivo BLE","Listado Últimas Mediciones"};
+    private static final int CODIGO_PETICION_PERMISOS = 11223344;
 
-    private List<Medicion> mediciones = new ArrayList<>();
-
-    //-------------------------------------------------------------------------
-    //-------------------------------------------------------------------------
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        permisosBluetooth();
 
-        this.elTexto = (TextView) findViewById(R.id.elTexto);
-        this.elBotonEnviar = (Button) findViewById(R.id.botonEnviar);
-        this.input = (EditText) findViewById(R.id.numero);
-
-
-        inicializarBlueTooth();
-
-        Log.d("clienterestandroid", "fin onCreate()");
+        //Referenciar l'objecte TabLayout amb la vista i afegir tabs
+        //Funcionalitat per als tabs
+        ViewPager2 viewPager = findViewById(R.id.viewpager);
+        viewPager.setAdapter(new PagerAdapter(this));
+        TabLayout tabs = findViewById(R.id.tabs);
+        new TabLayoutMediator(tabs, viewPager,
+                new TabLayoutMediator.TabConfigurationStrategy() {
+                    @Override
+                    public void onConfigureTab(@NonNull TabLayout.Tab tab, int position){
+                        tab.setText(nombres[position]);
+                    }
+                }
+        ).attach();
     }
 
-    //-------------------------------------------------------------------------
-    //PART RECEPCIÓ BLE
-    //-------------------------------------------------------------------------
-
-    private static final String ETIQUETA_LOG = ">>>>";
-
-    private static final int CODIGO_PETICION_PERMISOS = 11223344;
-
-    private BluetoothLeScanner elEscanner;
-
-    private ScanCallback callbackDelEscaneo = null;
-
-    // --------------------------------------------------------------
-    //
-    // --------------------------------------------------------------
-    private void inicializarBlueTooth() {
-        Log.d(ETIQUETA_LOG, " inicializarBlueTooth(): obtenemos adaptador BT ");
-
-        BluetoothAdapter bta = BluetoothAdapter.getDefaultAdapter();
-
-        Log.d(ETIQUETA_LOG, " inicializarBlueTooth(): habilitamos adaptador BT ");
-
-        bta.enable();
-
-        Log.d(ETIQUETA_LOG, " inicializarBlueTooth(): habilitado =  " + bta.isEnabled() );
-
-        Log.d(ETIQUETA_LOG, " inicializarBlueTooth(): estado =  " + bta.getState() );
-
-        Log.d(ETIQUETA_LOG, " inicializarBlueTooth(): obtenemos escaner btle ");
-
-        this.elEscanner = bta.getBluetoothLeScanner();
-
-        if ( this.elEscanner == null ) {
-            Log.d(ETIQUETA_LOG, " inicializarBlueTooth(): Socorro: NO hemos obtenido escaner btle  !!!!");
-
-        }
-
-        Log.d(ETIQUETA_LOG, " inicializarBlueTooth(): voy a perdir permisos (si no los tuviera) !!!!");
-
+    private void permisosBluetooth(){
         if (
                 ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED
                         || ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED
@@ -107,10 +54,10 @@ public class MainActivity extends AppCompatActivity {
                     CODIGO_PETICION_PERMISOS);
         }
         else {
-            Log.d(ETIQUETA_LOG, " inicializarBlueTooth(): parece que YA tengo los permisos necesarios !!!!");
+            Log.d("PERMISOS BLUETOOTH", " Parece que YA tengo los permisos necesarios !!!!");
 
         }
-    } // ()
+    }
 
     // --------------------------------------------------------------
     // --------------------------------------------------------------
@@ -124,289 +71,15 @@ public class MainActivity extends AppCompatActivity {
                 if (grantResults.length > 0 &&
                         grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                    Log.d(ETIQUETA_LOG, " onRequestPermissionResult(): permisos concedidos  !!!!");
+                    Log.d("PERMISOS BLUETOOTH", " onRequestPermissionResult(): permisos concedidos  !!!!");
                     // Permission is granted. Continue the action or workflow
                     // in your app.
                 }  else {
 
-                    Log.d(ETIQUETA_LOG, " onRequestPermissionResult(): Socorro: permisos NO concedidos  !!!!");
+                    Log.d("PERMISOS BLUETOOTH", " onRequestPermissionResult(): Socorro: permisos NO concedidos  !!!!");
 
                 }
                 return;
         }
     }
-
-    // --------------------------------------------------------------
-    // --------------------------------------------------------------
-    public void botonBuscarNuestroDispositivoBTLEPulsado( View v ) {
-        Log.d(ETIQUETA_LOG, " boton nuestro dispositivo BTLE Pulsado" );
-        //this.buscarEsteDispositivoBTLE( Utilidades.stringToUUID( "EPSG-GTI-PROY-3A" ) ); GTI-3A-ABENEST C5:BC:C9:2D:5C:D0
-
-        this.buscarEsteDispositivoBTLE( "GTI-3A-ABENEST" , "C5:BC:C9:2D:5C:D0" );
-        //this.buscarEsteDispositivoBTLE( "fistro" );
-
-    } // ()
-
-    // --------------------------------------------------------------
-    // --------------------------------------------------------------
-    public void botonDetenerBusquedaDispositivosBTLEPulsado( View v ) {
-        Log.d(ETIQUETA_LOG, " boton detener busqueda dispositivos BTLE Pulsado" );
-        this.detenerBusquedaDispositivosBTLE();
-    } // ()
-
-
-    // --------------------------------------------------------------
-    // --------------------------------------------------------------
-    private void buscarEsteDispositivoBTLE(final String dispositivoBuscado, final String dispositivoMAC ) {
-
-        this.detenerBusquedaDispositivosBTLE();
-        Log.d(ETIQUETA_LOG, " buscarEsteDispositivoBTLE(): empieza ");
-
-        Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): instalamos scan callback ");
-
-
-        // super.onScanResult(ScanSettings.SCAN_MODE_LOW_LATENCY, result); para ahorro de energía
-
-        this.callbackDelEscaneo = new ScanCallback() {
-            @Override
-            public void onScanResult( int callbackType, ScanResult resultado ) {
-                super.onScanResult(callbackType, resultado);
-                Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): onScanResult() ");
-                mostrarInformacionDispositivoBTLE( resultado );
-                guardarNuevaMedida(resultado);
-            }
-
-            @Override
-            public void onBatchScanResults(List<ScanResult> results) {
-
-                super.onBatchScanResults(results);
-                Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): onBatchScanResults() ");
-
-            }
-
-            @Override
-            public void onScanFailed(int errorCode) {
-                super.onScanFailed(errorCode);
-                Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): onScanFailed() ");
-
-            }
-        };
-
-        Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): empezamos a escanear buscando: " + dispositivoBuscado );
-        Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): también escanear buscando: " + dispositivoMAC );
-        //Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): empezamos a escanear buscando: " + dispositivoBuscado
-        //      + " -> " + Utilidades.stringToUUID( dispositivoBuscado ) );
-
-        ArrayList<ScanFilter> filters = new ArrayList<ScanFilter>();
-        filters = (ArrayList<ScanFilter>) filtrarDispositivos(dispositivoBuscado, dispositivoMAC);
-        ScanSettings settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_POWER).build();
-        this.elEscanner.startScan(filters, settings, this.callbackDelEscaneo );
-    } // ()
-
-
-    // --------------------------------------------------------------
-    // --------------------------------------------------------------
-    private List<ScanFilter> filtrarDispositivos(@Nullable String nombreDispositivo, @Nullable String dispositivoMAC){
-        ScanFilter scanFilterName = new ScanFilter.Builder().setDeviceName(nombreDispositivo).build();
-        ScanFilter scanFilterMAC = new ScanFilter.Builder().setDeviceAddress(dispositivoMAC).build();
-        ArrayList<ScanFilter> filtros = new ArrayList<ScanFilter>();
-        filtros.add(scanFilterName);
-        filtros.add(scanFilterMAC);
-        return filtros;
-    }//()
-
-    // --------------------------------------------------------------
-    // --------------------------------------------------------------
-    private void detenerBusquedaDispositivosBTLE() {
-
-        if ( this.callbackDelEscaneo == null ) {
-            return;
-        }
-
-        this.elEscanner.stopScan( this.callbackDelEscaneo );
-        this.callbackDelEscaneo = null;
-
-    } // ()
-
-    // --------------------------------------------------------------
-    // --------------------------------------------------------------
-    private void mostrarInformacionDispositivoBTLE( ScanResult resultado ) {
-
-        BluetoothDevice bluetoothDevice = resultado.getDevice();
-        byte[] bytes = resultado.getScanRecord().getBytes();
-        int rssi = resultado.getRssi();
-
-        Log.d(ETIQUETA_LOG, " ****************************************************");
-        Log.d(ETIQUETA_LOG, " ****** DISPOSITIVO DETECTADO BTLE ****************** ");
-        Log.d(ETIQUETA_LOG, " ****************************************************");
-        Log.d(ETIQUETA_LOG, " nombre = " + bluetoothDevice.getName());
-        Log.d(ETIQUETA_LOG, " toString = " + bluetoothDevice.toString());
-
-        /*
-        ParcelUuid[] puuids = bluetoothDevice.getUuids();
-        if ( puuids.length >= 1 ) {
-            //Log.d(ETIQUETA_LOG, " uuid = " + puuids[0].getUuid());
-           // Log.d(ETIQUETA_LOG, " uuid = " + puuids[0].toString());
-        }*/
-
-        Log.d(ETIQUETA_LOG, " dirección = " + bluetoothDevice.getAddress());
-        Log.d(ETIQUETA_LOG, " rssi = " + rssi );
-
-        Log.d(ETIQUETA_LOG, " bytes = " + new String(bytes));
-        Log.d(ETIQUETA_LOG, " bytes (" + bytes.length + ") = " + Utilidades.bytesToHexString(bytes));
-
-        TramaIBeacon tib = new TramaIBeacon(bytes);
-
-        Log.d(ETIQUETA_LOG, " ----------------------------------------------------");
-        Log.d(ETIQUETA_LOG, " prefijo  = " + Utilidades.bytesToHexString(tib.getPrefijo()));
-        Log.d(ETIQUETA_LOG, "          advFlags = " + Utilidades.bytesToHexString(tib.getAdvFlags()));
-        Log.d(ETIQUETA_LOG, "          advHeader = " + Utilidades.bytesToHexString(tib.getAdvHeader()));
-        Log.d(ETIQUETA_LOG, "          companyID = " + Utilidades.bytesToHexString(tib.getCompanyID()));
-        Log.d(ETIQUETA_LOG, "          iBeacon type = " + Integer.toHexString(tib.getiBeaconType()));
-        Log.d(ETIQUETA_LOG, "          iBeacon length 0x = " + Integer.toHexString(tib.getiBeaconLength()) + " ( "
-                + tib.getiBeaconLength() + " ) ");
-        Log.d(ETIQUETA_LOG, " uuid  = " + Utilidades.bytesToHexString(tib.getUUID()));
-        Log.d(ETIQUETA_LOG, " uuid  = " + Utilidades.bytesToString(tib.getUUID()));
-        Log.d(ETIQUETA_LOG, " major  = " + Utilidades.bytesToHexString(tib.getMajor()) + "( "
-                + Utilidades.bytesToInt(tib.getMajor()) + " ) ");
-        Log.d(ETIQUETA_LOG, " minor  = " + Utilidades.bytesToHexString(tib.getMinor()) + "( "
-                + Utilidades.bytesToInt(tib.getMinor()) + " ) ");
-        Log.d(ETIQUETA_LOG, " txPower  = " + Integer.toHexString(tib.getTxPower()) + " ( " + tib.getTxPower() + " )");
-        Log.d(ETIQUETA_LOG, " ****************************************************");
-
-    } // ()
-
-    private void guardarNuevaMedida(ScanResult result){
-
-        Medicion medicion = new Medicion();
-        byte[] bytes = result.getScanRecord().getBytes();
-        TramaIBeacon tramaIBeacon = new TramaIBeacon(bytes);
-
-        BluetoothDevice bluetoothDevice = result.getDevice();
-
-        medicion.setNombreSensor(bluetoothDevice.getName());
-        medicion.setMacSensor(bluetoothDevice.getAddress());
-        medicion.setFecha();
-        medicion.setUuidSensor(Utilidades.bytesToString(tramaIBeacon.getUUID()));
-        medicion.setMedida(Utilidades.bytesToInt(tramaIBeacon.getMinor()));
-
-        //Dins de Major agafar el primer byte i transformar-lo a int per a determinar el tipus de mesura
-        byte[] tipoMedida =  Arrays.copyOfRange(tramaIBeacon.getMajor(), 0, 1 );
-        medicion.setTipo(Utilidades.bytesToInt(tipoMedida));
-
-        //De moment es posen lat i log del Campus de Gandia
-        medicion.setLatitud(38.995860);
-        medicion.setLongitud(-0.166152);
-
-        //Afegim a l'array si  la mesura no està incorporada
-        if(!comprobarSiYaEstaLaMedicion(medicion)){
-            mediciones.add(medicion);
-        }
-
-    }
-
-    private boolean comprobarSiYaEstaLaMedicion(Medicion m){
-        if(this.mediciones.size() == 0){
-            return false;
-        }
-
-        for (Medicion medicion : this.mediciones){
-            if(m.getTipo().equals(medicion.getTipo()) && (m.getFecha() < medicion.getFecha()+5000)){
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    public void verArrayMedidas(View v){
-        Log.d(ETIQUETA_LOG, " Longitud de la lista  = " + this.mediciones.size());
-        for (Medicion m : this.mediciones){
-            Log.d(ETIQUETA_LOG, " ****************************************************");
-            Log.d(ETIQUETA_LOG, " nombre  = " + m.getNombreSensor());
-            Log.d(ETIQUETA_LOG, " mac  = " + m.getMacSensor());
-            Log.d(ETIQUETA_LOG, " uuid  = " + m.getUuidSensor());
-            Log.d(ETIQUETA_LOG, " fecha  = " + m.getFecha());
-            Log.d(ETIQUETA_LOG, " tipo  = " + m.getTipo());
-            Log.d(ETIQUETA_LOG, " medida  = " + m.getMedida());
-            Log.d(ETIQUETA_LOG, " lat  = " + m.getLatitud());
-            Log.d(ETIQUETA_LOG, " long  = " + m.getLongitud());
-            Log.d(ETIQUETA_LOG, " ****************************************************");
-        }
-    }
-
-
-
-
-
-    //-------------------------------------------------------------------------
-    //PART ENVIO SERVIDOR REST
-    //-------------------------------------------------------------------------
-    public void boton_enviar_pulsado(View v) {
-        Log.d("clienterestandroid", "boton_enviar_pulsado");
-        this.elTexto.setText("pulsado");
-
-        // ojo: creo que hay que crear uno nuevo cada vez
-        PeticionarioREST elPeticionario = new PeticionarioREST();
-
-		/*
-
-		   enviarPeticion( "hola", function (res) {
-		   		res
-		   })
-
-        elPeticionario.hacerPeticionREST("GET",  "http://158.42.144.126:8080/prueba", null,
-			(int codigo, String cuerpo) => { } );
-
-		   */
-
-        String jsontext = "{\"medida\":\""+ input.getText() + "\"}";
-        elPeticionario.hacerPeticionREST("POST",  "http://10.236.28.238:8080/medida",
-                jsontext,
-                new PeticionarioREST.RespuestaREST () {
-                    @Override
-                    public void callback(int codigo, String cuerpo) {
-                        elTexto.setText ("codigo respuesta= " + codigo + " <-> \n" + cuerpo);
-                    }
-                }
-        );
-
-        Log.d("clienterestandroid", "HOLA");
-
-        /*elPeticionario.hacerPeticionREST("POST", "http://192.168.0.107:8080/mensaje",
-                "{\"dni\": \"A9182342W\", \"nombre\": \"Android\", \"apellidos\": \"De Los Palotes\"}",
-                new PeticionarioREST.RespuestaREST () {
-                    @Override
-                    public void callback(int codigo, String cuerpo) {
-                        elTexto.setText ("codigo respuesta: " + codigo + " <-> \n" + cuerpo);
-                    }
-                });*/
-
-        //(int codigo, String cuerpo) -> { elTexto.setText ("lo que sea"=; }
-
-        //String textoJSON = "{ 'medida': '" + 987.12  + "' }";
-
-        //"{ 'dni': '2023423434' }";
-
-        /*
-
-
-		// otro ejemplo:
-
-
-
-		/*
-        elPeticionario.hacerPeticionREST("GET",  "https://jsonplaceholder.typicode.com/posts/2", ...
-
-    } // pulsado ()
-
-    //-------------------------------------------------------------------------
-    //-------------------------------------------------------------------------
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;*/
-    }
-
-} // class
+}

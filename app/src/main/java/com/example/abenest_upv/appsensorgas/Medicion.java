@@ -1,16 +1,14 @@
 package com.example.abenest_upv.appsensorgas;
 
-import androidx.annotation.Nullable;
-
-import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
-import java.util.Date;
-
 import static java.lang.System.currentTimeMillis;
+
+// -----------------------------------------------------------------------------------
+// @author: Aitor Benítez Estruch
+// -----------------------------------------------------------------------------------
 
 public class Medicion {
 
-    private enum TipoMedida{CO2, TEMPERATURA, RUIDO};
+    private enum TipoMedida{CO2, TEMPERATURA};
     private TipoMedida tipo;
     private String nombreSensor, macSensor, uuidSensor;
     private int medida; //de moment serà un nº enter
@@ -27,14 +25,20 @@ public class Medicion {
         return this.fecha;
     }
 
+    //S'ha de posar un argument
     public void setFecha() {
         this.fecha = currentTimeMillis();
+    }
+
+    public void setFecha(long fecha) {
+        this.fecha = fecha;
     }
 
     public String getTipo() {
         return tipo.name();
     }
 
+    //S'ha de canviar l'argument
     public void setTipo(int identificador) {
         switch (identificador) {
             case 11:
@@ -43,8 +47,18 @@ public class Medicion {
             case 12:
                 this.tipo = tipo.TEMPERATURA;
                 break;
-            case 13:
-                this.tipo = tipo.RUIDO;
+            default:
+                break;
+        }
+    }
+
+    public void setTipo(String tipoM) {
+        switch (tipoM) {
+            case "CO2":
+                this.tipo = tipo.CO2;
+                break;
+            case "TEMPERATURA":
+                this.tipo = tipo.TEMPERATURA;
                 break;
             default:
                 break;
@@ -99,17 +113,17 @@ public class Medicion {
         this.longitud = longitud;
     }
 
-    // Filtre per a no afegir la mateixa mesura enviada (quasi) al mateix temps.
-    // Primer, comprovar que el tipus de mesura és la mateixa.
-    // Segon, comprovar si les mesures s'han enviat fa menys de 10 segons entre elles (marge establert
-    // actualment a la placa d'arduino per a enviar noves mesures). El marge es posa per les xicotetes
-    // variacions de milisegons entre les mesures que s'envien amb els beacons.
-    public boolean equals(Medicion otraMedicion) {
-        if(this.tipo.name().equals(otraMedicion.getTipo()) ){
-            //Tornar true si les dates es lleven menys de 5 segons
-            return  (this.fecha > otraMedicion.getFecha()+5000 );
-        }
-        return false;
+    @Override
+    public String toString() {
+        return "{" +
+                " nombreSensor='" + nombreSensor + '\'' +
+                ", macSensor='" + macSensor + '\'' +
+                ", uuidSensor='" + uuidSensor + '\'' +
+                ", tipo=" + tipo.name() +
+                ", medida=" + medida +
+                ", latitud=" + latitud +
+                ", longitud=" + longitud +
+                ", fecha=" + fecha +
+                '}';
     }
-
 }

@@ -19,9 +19,8 @@ public class PeticionarioREST extends AsyncTask<Void, Void, Boolean> {
 
     // --------------------------------------------------------------------
     // --------------------------------------------------------------------
-
     public interface RespuestaREST {
-        void callback (int codigo, String cuerpo);
+        void callback(int codigo, String cuerpo);
     }
 
     // --------------------------------------------------------------------
@@ -59,12 +58,6 @@ public class PeticionarioREST extends AsyncTask<Void, Void, Boolean> {
         Log.d("clienterestandroid", "doInBackground()");
 
         try {
-
-            // envio la peticion
-
-            // pagina web para hacer pruebas: URL url = new URL("https://httpbin.org/html");
-            // ordinador del despatx 158.42.144.126 // OK URL url = new URL("http://158.42.144.126:8080");
-
             Log.d("clienterestandroid", "doInBackground() me conecto a >" + urlDestino + "< " + elCuerpo);
 
             URL url = new URL(urlDestino);
