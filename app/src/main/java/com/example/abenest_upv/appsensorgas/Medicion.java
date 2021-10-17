@@ -105,6 +105,8 @@ public class Medicion {
                 this.tipo = tipo.HUMEDAD_RELATIVA;
                 break;
             default:
+                // Como se ha cambiado el tipo CO2 por CONCENTRACION_GAS, poner default CONCENTRACION_GAS
+                this.tipo = tipo.CONCENTRACION_GAS;
                 break;
         }
     }
