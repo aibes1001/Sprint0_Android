@@ -27,7 +27,7 @@
             </intent-filter>
         </activity>
         <service android:name=".ServicioEscuharBeacons"></service>
-        <service android:name=".ServicioPeticionesRest" />
+        <service android:name=".ServicioLogicaFake" />
 
     </application>
 

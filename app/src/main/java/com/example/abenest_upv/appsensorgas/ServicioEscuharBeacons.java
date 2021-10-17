@@ -1,3 +1,14 @@
+/**
+ * ServicioEscucharBeacons.java
+ * @fecha: 07/10/2021
+ * @autor: Aitor Benítez Estruch
+ *
+ * @Descripcion:
+ * Este fichero contiene la clase ServicioEscuharBeacons, para ejecutar un servicio que permitirá
+ * recibir información vía bluetooth y gestionar los datos recibidos.
+ */
+
+
 package com.example.abenest_upv.appsensorgas;
 
 import android.app.NotificationChannel;
@@ -45,12 +56,24 @@ public class ServicioEscuharBeacons extends Service {
     static final String CANAL_ID = "mi_canal";
     static final int NOTIFICACION_ID = 1;
 
-    // ---------------------------------------------------------------------------------------------
-    // ---------------------------------------------------------------------------------------------
+    /**
+     * El método onStartCommand se ejecuta al iniciar el servicio
+     *
+     * elIntent:Intent,
+     * losFlags: Z,
+     * startId:Z -> onStartCommand() ->
+     * Z <-
+     *
+     * @param elIntent
+     * @param losFlags
+     * @param startId
+     *
+     * @return N
+     */
 
     @Override
     public int onStartCommand( Intent elIntent, int losFlags, int startId) {
-        // creo que este método no es necesario usarlo. Lo ejecuta el thread principal !!!
+
         super.onStartCommand( elIntent, losFlags, startId );
 
         nombreBLE = elIntent.getStringExtra("nombreDispositivo");
@@ -60,13 +83,16 @@ public class ServicioEscuharBeacons extends Service {
         crearNotificaciónSegundoPlano();
 
         try{
+            //Inicializamos el bluetooth
             inicializarBlueTooth();
+
+            //Buscamos el dispositivo que deseamos a través de su nombre y/o bien su MAC
             buscarEsteDispositivoBTLE(nombreBLE, macBLE);
         }catch (Exception e){
-            Toast.makeText(this, "Compruebe que tiene el bluetooth activado",
+            //En caso de haber algún error como que no esté aún activado el bluetooth mostramos un toast
+            Toast.makeText(this, "Activado bluetooth del dispositivo",
                     Toast.LENGTH_SHORT).show();
         }
-
 
         Toast.makeText(this,"Servicio Bluetooth arrancado ",
                 Toast.LENGTH_SHORT).show();
@@ -76,10 +102,15 @@ public class ServicioEscuharBeacons extends Service {
         return START_STICKY;
     } // ()
 
-    //--------------------------------------------------------------------
-    //--------------------------------------------------------------------
+    /**
+     * El método crearNotificaciónSegundoPlano crea una notificación que indica que el servicio
+     * está en marcha.
+     *
+     * crearNotificacionSegundoPlano() <-
+     *
+     */
     private void crearNotificaciónSegundoPlano(){
-        //Crear la notificació
+        //Crear la notificación
         notificationManager = (NotificationManager)
                 getSystemService(NOTIFICATION_SERVICE);
 
@@ -96,11 +127,11 @@ public class ServicioEscuharBeacons extends Service {
                         .setSmallIcon(R.mipmap.ic_launcher)
                         .setContentTitle("Sensor Bluetooth escuchando")
                         .setContentText("Notificación de sensor de bluetooth activo");
-        //Llançar l'aplicació des de la notificació
-        PendingIntent intencionPendiente = PendingIntent.getActivity(
-                this, 0, new Intent(this, Tab1.class), 0);
-        notificacion.setContentIntent(intencionPendiente);
 
+        //Llançar l'aplicació des de la notificació
+        /*PendingIntent intencionPendiente = PendingIntent.getActivity(
+                this, 0, new Intent(this, Tab1.class), 0);
+        notificacion.setContentIntent(intencionPendiente);*/
 
         //Servici en primer pla (DECLARAR EN EL MANIFEST)
         //startForeground(NOTIFICACION_ID, notificacion.build());
@@ -110,16 +141,21 @@ public class ServicioEscuharBeacons extends Service {
     }
 
 
-    //------------------------------------------------------------
-    //Accions per a donar per acabat el servici
-    //-----------------------------------------------------------
+    /**
+     * El método onDestroy ejecuta las acciones para dar por finalizado el servicio
+     * está en marcha.
+     *
+     * onDestroy() ->
+     *
+     */
     @Override public void onDestroy() {
         this.detenerBusquedaDispositivosBTLE();
-        Toast.makeText(this,"Servicio bluetooth detenido",
-                Toast.LENGTH_SHORT).show();
-        notificationManager.cancel(NOTIFICACION_ID);
     }
 
+    /**
+     * Este método aquí no hace nada pero es necesario implementarlo en la clase
+     *
+     */
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -127,9 +163,12 @@ public class ServicioEscuharBeacons extends Service {
     }
 
 
-    // --------------------------------------------------------------
-    //
-    // --------------------------------------------------------------
+    /**
+     * El método inicializarBlueTooth habilita el bluetooth y prepara para poder recibir beacons
+     *
+     * inicializarBluetooth() ->
+     *
+     */
     private void inicializarBlueTooth() {
         Log.d(ETIQUETA_LOG, " inicializarBlueTooth(): obtenemos adaptador BT ");
 
@@ -154,28 +193,45 @@ public class ServicioEscuharBeacons extends Service {
 
     } // ()
 
-    // --------------------------------------------------------------
-    // --------------------------------------------------------------
+    /**
+     * El método detenerBusquedaDispositivosBTLE para la escucha de beacons de los dispositivos
+     *
+     * detenerBusquedaDispositivosBTLE() ->
+     *
+     */
     private void detenerBusquedaDispositivosBTLE() {
 
         if ( this.callbackDelEscaneo == null ) {
             return;
         }
 
-        this.elEscanner.stopScan( this.callbackDelEscaneo );
-        this.callbackDelEscaneo = null;
+        try{
+            this.elEscanner.stopScan( this.callbackDelEscaneo );
+            this.callbackDelEscaneo = null;
+
+            notificationManager.cancel(NOTIFICACION_ID);
+
+        }catch (Exception e){}
 
     } // ()
 
-    // --------------------------------------------------------------
-    // --------------------------------------------------------------
+    /**
+     * El método buscarEsteDispositivoBTLE inicia la búsqueda de un dispositivo concreto filtrando
+     * por su nombre y/o MAC
+     *
+     * dispositivoBuscado: Texto,
+     * dispositivoMac: Texto -> buscarEsteDispositivoBTLE() ->
+     *
+     * @param dispositivoBuscado Texto con el nombre del dispositivo que se desea buscar
+     * @param dispositivoMAC Texto con la MAC del dispositivo que se desea buscar
+     *
+     */
     private void buscarEsteDispositivoBTLE(final String dispositivoBuscado, final String dispositivoMAC ) {
 
         this.detenerBusquedaDispositivosBTLE();
         Log.d(ETIQUETA_LOG, " buscarEsteDispositivoBTLE(): empieza ");
 
         Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): instalamos scan callback ");
-
 
         // super.onScanResult(ScanSettings.SCAN_MODE_LOW_LATENCY, result); para ahorro de energía
 
@@ -205,19 +261,33 @@ public class ServicioEscuharBeacons extends Service {
 
         Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): empezamos a escanear buscando: " + dispositivoBuscado );
         Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): también escanear buscando: " + dispositivoMAC );
-        //Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): empezamos a escanear buscando: " + dispositivoBuscado
-        //      + " -> " + Utilidades.stringToUUID( dispositivoBuscado ) );
 
+        //Configuramos los filtros de búsqueda del dispositivo
         ArrayList<ScanFilter> filters = new ArrayList<ScanFilter>();
         filters = (ArrayList<ScanFilter>) filtrarDispositivos(dispositivoBuscado, dispositivoMAC);
+
+        //Configuramos el tipo de búsqueda
         ScanSettings settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_POWER).build();
+
+        //Iniciamos el escaneo de dispositivos
         this.elEscanner.startScan(filters, settings, this.callbackDelEscaneo );
     } // ()
 
 
 
-    // --------------------------------------------------------------
-    // --------------------------------------------------------------
+    /**
+     * El método filtrarDispositivos incluimos los tipos de filtros que se quieren incluir para
+     * buscar nuestro dispositivo bluetooth
+     *
+     * dispositivoBuscado: Texto,
+     * dispositivoMac: Texto -> filtrarDispositivos() ->
+     * [ScanFilter] <-
+     *
+     * @param nombreDispositivo Texto con el nombre del dispositivo que se desea buscar
+     * @param macDispositivo Texto con la MAC del dispositivo que se desea buscar
+     *
+     * @return filtos Lista de ScanFilter con los filtros que queremos para buscar
+     */
     private List<ScanFilter> filtrarDispositivos(String nombreDispositivo, String macDispositivo){
         ArrayList<ScanFilter> filtros = new ArrayList<ScanFilter>();
 
@@ -234,8 +304,15 @@ public class ServicioEscuharBeacons extends Service {
     }//()
 
 
-    // --------------------------------------------------------------
-    // --------------------------------------------------------------
+    /**
+     * El método mostrarInformacionDispositivoBTLE muestra en el LogCat la información recibida
+     * de cada beacon
+     *
+     * resultado: ScanResult -> mostrarInformacionDispositivo BTLE() <-
+     *
+     * @param resultado ScanResult con la información de cada beacon recibido
+     *
+     */
     private void mostrarInformacionDispositivoBTLE( ScanResult resultado ) {
 
         BluetoothDevice bluetoothDevice = resultado.getDevice();
@@ -275,6 +352,17 @@ public class ServicioEscuharBeacons extends Service {
 
     } // ()
 
+    /**
+     * El método guardarNuevaMedida crea un objeto de tipo Medicion a partir de la información
+     * otenida en cada beacon. Posteriormente incluye la medición en un array de mediciones
+     * si esta aún no ha sido incluída ya que se pueden llegar a recibir varios beacons de la
+     * misma medición.
+     *
+     * result: ScanResult -> guardarNuevaMedida() ->
+     *
+     * @param result ScanResult con la información de cada beacon recibido
+     *
+     */
     private void guardarNuevaMedida(ScanResult result){
 
         Medicion medicion = new Medicion();
@@ -289,29 +377,43 @@ public class ServicioEscuharBeacons extends Service {
         medicion.setUuidSensor(Utilidades.bytesToString(tramaIBeacon.getUUID()));
         medicion.setMedida(Utilidades.bytesToInt(tramaIBeacon.getMinor()));
 
-        //Dins de Major agafar el primer byte i transformar-lo a int per a determinar el tipus de mesura
+        //Dentro de Major coger el byte más significativo para determinar el tipo de medida
         byte[] tipoMedida =  Arrays.copyOfRange(tramaIBeacon.getMajor(), 0, 1 );
         medicion.setTipo(Utilidades.bytesToInt(tipoMedida));
 
-        //De moment es posen lat i log del Campus de Gandia
+        //De momento poner lat y log del Campus de Gandia
         medicion.setLatitud(38.995860);
         medicion.setLongitud(-0.166152);
 
-        //Afegim a l'array si  la mesura no està incorporada
+        //Añadimos al array si la medición no esta ya, y la enviamos de forma broadcast
         if(!comprobarSiYaEstaLaMedicion(medicion)){
             mediciones.add(medicion);
             pasarMedicion(medicion);
-            enviarUltimaMedicion();
         }
 
     }
 
+
+    /**
+     * El método comprobarSiYaEstaLaMedicion se encarga de comprobar si una medición ya está dentro
+     * de la lista de mediciones. Lo comprueba a través del tipo de medición y de la fecha de medición.
+     *
+     * m: Medicion -> comprobarSiYaEstaLaMedida() <-
+     *     V/F <-
+     *
+     * @param m Objeto Medición que se quiere comprobar
+     *
+     * @return V/F
+     *
+     */
     private boolean comprobarSiYaEstaLaMedicion(Medicion m){
         if(this.mediciones.size() == 0){
             return false;
         }
 
         for (Medicion medicion : this.mediciones){
+            //Si el tipo de medición coincide y la fecha se diferencia por menos de 5 segundos, la
+            // medición ya está incluida y devuelve True
             if(m.getTipo().equals(medicion.getTipo()) && (m.getFecha() < medicion.getFecha()+5000)){
                 return true;
             }
@@ -320,7 +422,13 @@ public class ServicioEscuharBeacons extends Service {
         return false;
     }
 
-    public void verArrayMedidas(View v){
+    /**
+     * El método verArrayMedidas muestra en el LogCat las mediciones dentro de la lista
+     *
+     * verArrayMedidas() <-
+     *
+     */
+    public void verArrayMedidas(){
         Log.d(ETIQUETA_LOG, " Longitud de la lista  = " + this.mediciones.size());
         for (Medicion m : this.mediciones){
             Log.d(ETIQUETA_LOG, " ****************************************************");
@@ -337,15 +445,13 @@ public class ServicioEscuharBeacons extends Service {
     }
 
 
-    //Mètode per a actualitzar les dades agafades
-    public void enviarUltimaMedicion(){
-        Log.d(ETIQUETA_LOG, "LONGITUD ARRAY: " + this.mediciones.get(this.mediciones.size() - 1));
-        Intent i = new Intent();
-        i.setAction("Datos_Ultimo_Beacon");
-        i.putExtra("Medicion", this.mediciones.get(this.mediciones.size() - 1).toString());
-        sendBroadcast(i);
-    }
-
+    /**
+     * El método pasarMedicion envía un intent de forma broadcast dentro de la aplicación
+     * con la última medición
+     *
+     *  medicion: Medicion -> pasarMedicion() <-
+     *
+     */
     public void pasarMedicion(Medicion m){
         Intent i = new Intent();
         i.setAction("Nueva_Medicion");

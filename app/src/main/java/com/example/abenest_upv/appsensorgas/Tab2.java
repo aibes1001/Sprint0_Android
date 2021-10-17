@@ -1,3 +1,12 @@
+/**
+ * Tab2.java
+ * @fecha: 08/10/2021
+ * @autor: Aitor Benítez Estruch
+ *
+ * @Descripcion:
+ * Este fichero ejecuta la clase Tab2 que ofrece la vista de este Fragment
+ */
+
 package com.example.abenest_upv.appsensorgas;
 
 import android.app.ProgressDialog;
@@ -42,6 +51,11 @@ public class Tab2 extends Fragment {
         context.registerReceiver(receptor, intentFilter);
     }
 
+    /**
+     * onCreateView() carga la vista y los elementos que hay en tab2.xml
+     *
+     * onCreateView() ->
+     */
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -50,6 +64,8 @@ public class Tab2 extends Fragment {
         progressDialog = new ProgressDialog(context);
         progressDialog.setMessage("Obteniendo las últimas mediciones");
         progressDialog.show();
+
+        //Preparamos el RecyclerView
         recyclerView = v.findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(context));
         adaptador = new Adaptador(context, mediciones);
@@ -64,12 +80,10 @@ public class Tab2 extends Fragment {
         return v;
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-
-    }
-
+    /**
+     * Clase ReceptorGetMedicion
+     * Receptor de mensajes broadcast de tipo "Get_Medicion"
+     */
     private class ReceptorGetMedicion extends BroadcastReceiver {
 
         @Override

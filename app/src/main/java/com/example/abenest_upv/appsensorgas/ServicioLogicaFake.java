@@ -1,3 +1,14 @@
+/**
+ * ServicioLogicaFake.java
+ * @fecha: 07/10/2021
+ * @autor: Aitor Benítez Estruch
+ *
+ * @Descripcion:
+ * Este fichero contiene la clase ServicioLogicaFake, para ejecutar un servicio en un nuevo hilo
+ * que permite establecer una comunicación REST con el servidor, y enviar y recibir información.
+ *
+ */
+
 package com.example.abenest_upv.appsensorgas;
 
 import android.app.IntentService;
@@ -16,7 +27,11 @@ import java.util.List;
 
 import static java.lang.System.currentTimeMillis;
 
-public class ServicioPeticionesRest extends IntentService {
+/**
+ * Clase ServicioLogicaFake
+ * Clase que hereda de IntentService que permite ejecutar el servicio en un nuevo hilo
+ */
+public class ServicioLogicaFake extends IntentService {
     // ---------------------------------------------------------------------------------------------
     // ---------------------------------------------------------------------------------------------
     private static final String ETIQUETA_LOG = ">>>>";
@@ -31,53 +46,73 @@ public class ServicioPeticionesRest extends IntentService {
     private List<String> medicionesString = new ArrayList<>();
 
     IntentFilter filterStopServicio, filterRecepcionMedicion, filterIniciarGetMediciones;
-    StopServicioREST receiverStop;
+
     ReceptorMediciones receptorMedicion;
     InicializadorGetMediciones inicializadorGetMediciones;
 
-    // ---------------------------------------------------------------------------------------------
-    // ---------------------------------------------------------------------------------------------
-    public ServicioPeticionesRest(  ) {
-        super("ServicioPeticionesRest");
+    /**
+     * Constructor de la clase ServicioLogicaFake.
+     *
+     * Constructor() ->
+     */
+    public ServicioLogicaFake(  ) {
+        super("ServicioLogicaFake");
 
     }
 
+
+    /**
+     * onCreate() se ejecuta antes de iniciar el servicio
+     *
+     * onCreate() ->
+     */
     @Override
     public void onCreate() {
         super.onCreate();
-        filterStopServicio = new IntentFilter(StopServicioREST.ACTION_STOP);
-        filterStopServicio.addCategory(Intent.CATEGORY_DEFAULT);
-        receiverStop = new StopServicioREST();
-        registerReceiver(receiverStop, filterStopServicio);
+        try{
+            //Registramos el recibidor de mensaje broadcast "Nueva_Medicion"
+            filterRecepcionMedicion  = new IntentFilter();
+            filterRecepcionMedicion.addAction("Nueva_Medicion");
+            receptorMedicion = new ReceptorMediciones();
+            registerReceiver(receptorMedicion, filterRecepcionMedicion);
 
-        filterRecepcionMedicion  = new IntentFilter();
-        filterRecepcionMedicion.addAction("Nueva_Medicion");
-        receptorMedicion = new ReceptorMediciones();
-        registerReceiver(receptorMedicion, filterRecepcionMedicion);
+            //Registramos el recibidor de mensaje broadcast "Iniciar_GET_Mediciones"
+            filterIniciarGetMediciones = new IntentFilter();
+            filterIniciarGetMediciones.addAction("Iniciar_GET_Mediciones");
+            inicializadorGetMediciones = new InicializadorGetMediciones();
+            registerReceiver(inicializadorGetMediciones, filterIniciarGetMediciones);
 
-        filterIniciarGetMediciones = new IntentFilter();
-        filterIniciarGetMediciones.addAction("Iniciar_GET_Mediciones");
-        inicializadorGetMediciones = new InicializadorGetMediciones();
-        registerReceiver(inicializadorGetMediciones, filterIniciarGetMediciones);
+        }catch (Exception e){}
 
         tiempo = currentTimeMillis();
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // ---------------------------------------------------------------------------------------------
+
+
+    /**
+     * parar() finaliza la escucha de los receptores de mensajes broadcast y para el intentService
+     *
+     * parar() ->
+     */
     public void parar () {
         Log.d(ETIQUETA_LOG, " ServicioEscucharBeacons.parar() " );
         if ( this.seguir == false ) {
             return;
         }
         this.seguir = false;
+
+        unregisterReceiver(receptorMedicion);
+        unregisterReceiver(inicializadorGetMediciones);
         this.stopSelf();
         Log.d(ETIQUETA_LOG, " ServicioEscucharBeacons.parar() : acaba " );
 
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // ---------------------------------------------------------------------------------------------
+    /**
+     * onDestroy() se ejecuta al finalizar el servicio
+     *
+     * onDestroy() ->
+     */
     public void onDestroy() {
         Log.d(ETIQUETA_LOG, " ServicioEscucharBeacons.onDestroy() " );
         this.parar(); // posiblemente no haga falta, si stopService() ya se carga el servicio y su worker thread
@@ -106,11 +141,11 @@ public class ServicioPeticionesRest extends IntentService {
 
                 //Enviar mediciones cada 60s al servidor
                 if(currentTimeMillis() > tiempo + tiempoDeEsperaEnvioPost){
-                    enviarMedidasPost();
+                    guardarMediciones();
                     tiempo = currentTimeMillis();
                 }
 
-                recibirMedidasGET();
+                obtenerUltimasMediciones();
 
                 Thread.sleep(tiempoDeEsperaHilo);
             }
@@ -127,23 +162,30 @@ public class ServicioPeticionesRest extends IntentService {
 
         Log.d(ETIQUETA_LOG, " ServicioEscucharBeacons.onHandleItent: termina");
 
-        unregisterReceiver(receiverStop);
-        unregisterReceiver(receptorMedicion);
-        this.stopSelf();
+        //Si llega aquí es que pasa antes por onDestroy, ponemos un try-catch por si acaso
+        try{
+            unregisterReceiver(receptorMedicion);
+            unregisterReceiver(inicializadorGetMediciones);
+            this.stopSelf();
+        }catch(Exception e){}
 
     }
 
-    //-------------------------------------------------------------------------
-    //-------------------------------------------------------------------------
-    private void enviarMedidasPost() {
+
+    /**
+     * guardarMediciones() ejecuta una petición POST al servidor enviando un array de objetos Medicion
+     *
+     * guardarMediciones() ->
+     */
+    private void guardarMediciones() {
 
         if(medicionesString.size() > 0){
             PeticionarioREST elPeticionario = new PeticionarioREST();
 
             JSONArray jsArray = new JSONArray(medicionesString);
-            Log.d(ETIQUETA_LOG, "" + jsArray);
-            medicionesString.clear();
-            elPeticionario.hacerPeticionREST("POST",  "http://192.168.0.107:8080/medicion",
+            Log.d(ETIQUETA_LOG, "" + jsArray);//192.168.0.107:8080
+            medicionesString.clear();//10.236.29.250
+            elPeticionario.hacerPeticionREST("POST",  "http://192.168.0.107:8080/mediciones",
                     String.valueOf(jsArray),
                     new PeticionarioREST.RespuestaREST () {
                         @Override
@@ -156,9 +198,17 @@ public class ServicioPeticionesRest extends IntentService {
 
     }
 
-    private void recibirMedidasGET(){
+    /**
+     * obtenerUltimasMediciones() ejecuta una petición GET al servidor para recuperar las últimas
+     * 10 mediciones guardadas en la bd. El resultado lo envia con un intent de forma broadcast
+     * para que lo recupere en el Fragment Tab2 donde se listará el resultado
+     *
+     * obtenerUltimasMediciones() <-
+     */
+    private void obtenerUltimasMediciones(){
         PeticionarioREST elPeticionario = new PeticionarioREST();
-
+        //Direccion ip en UPVNET10.236.29.250
+        //Direccion ip en casa 192.168.0.107
         elPeticionario.hacerPeticionREST("GET",  "http://192.168.0.107:8080/ultimasMediciones/10", null,
                 new PeticionarioREST.RespuestaREST () {
                     @Override
@@ -166,7 +216,7 @@ public class ServicioPeticionesRest extends IntentService {
                         Log.d(ETIQUETA_LOG, "codigo respuesta= " + codigo + " <-> \n" + cuerpo);
 
                         Intent i = new Intent();
-                        i.setAction("GetMediciones");
+                        i.setAction("Get_Mediciones");
                         i.putExtra("Mediciones", cuerpo);
                         sendBroadcast(i);
 
@@ -175,17 +225,11 @@ public class ServicioPeticionesRest extends IntentService {
         );
     }
 
-    public class StopServicioREST extends BroadcastReceiver {
 
-        public static final String ACTION_STOP = "stop";
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Log.d("ETIQUETA_LOG", " ServicioEscucharBeacons.onHandleItent: termina");
-            seguir = false;
-        }
-    }
-
+    /**
+     * Clase ReceptorMediciones
+     * Receptor de mensajes broadcast de tipo "Nueva_Medicion"
+     */
     private class ReceptorMediciones extends BroadcastReceiver {
 
         @Override
@@ -202,13 +246,17 @@ public class ServicioPeticionesRest extends IntentService {
         }
     }
 
+    /**
+     * Clase InicializadorGetMediciones
+     * Receptor de mensajes broadcast de tipo "Iniciar_GET_Mediciones"
+     */
     private class InicializadorGetMediciones extends BroadcastReceiver {
 
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.d(ETIQUETA_LOG, "INICIALIZADOR OBTENCIÓN DE MEDIDASSSSSSSSSSSSSSSSSSSSS");
 
-            recibirMedidasGET();
+            obtenerUltimasMediciones();
 
         }
     }
