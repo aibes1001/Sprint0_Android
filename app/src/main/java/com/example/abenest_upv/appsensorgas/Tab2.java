@@ -44,7 +44,7 @@ public class Tab2 extends Fragment {
         //Per a agafar el context
         context = getActivity();
         intentFilter = new IntentFilter();
-        intentFilter.addAction("GetMediciones");
+        intentFilter.addAction("Get_Mediciones");
         receptor = new ReceptorGetMedicion();
 
         mediciones = new ArrayList<>();

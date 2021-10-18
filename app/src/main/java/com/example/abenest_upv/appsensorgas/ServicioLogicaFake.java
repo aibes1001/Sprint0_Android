@@ -69,20 +69,20 @@ public class ServicioLogicaFake extends IntentService {
     @Override
     public void onCreate() {
         super.onCreate();
-        try{
-            //Registramos el recibidor de mensaje broadcast "Nueva_Medicion"
-            filterRecepcionMedicion  = new IntentFilter();
-            filterRecepcionMedicion.addAction("Nueva_Medicion");
-            receptorMedicion = new ReceptorMediciones();
-            registerReceiver(receptorMedicion, filterRecepcionMedicion);
 
-            //Registramos el recibidor de mensaje broadcast "Iniciar_GET_Mediciones"
-            filterIniciarGetMediciones = new IntentFilter();
-            filterIniciarGetMediciones.addAction("Iniciar_GET_Mediciones");
-            inicializadorGetMediciones = new InicializadorGetMediciones();
-            registerReceiver(inicializadorGetMediciones, filterIniciarGetMediciones);
+        //Registramos el recibidor de mensaje broadcast "Nueva_Medicion"
+        filterRecepcionMedicion  = new IntentFilter();
+        filterRecepcionMedicion.addAction("Nueva_Medicion");
+        receptorMedicion = new ReceptorMediciones();
+        registerReceiver(receptorMedicion, filterRecepcionMedicion);
 
-        }catch (Exception e){}
+        //Registramos el recibidor de mensaje broadcast "Iniciar_GET_Mediciones"
+        filterIniciarGetMediciones = new IntentFilter();
+        filterIniciarGetMediciones.addAction("Iniciar_GET_Mediciones");
+        inicializadorGetMediciones = new InicializadorGetMediciones();
+        registerReceiver(inicializadorGetMediciones, filterIniciarGetMediciones);
+
+
 
         tiempo = currentTimeMillis();
     }
@@ -185,7 +185,7 @@ public class ServicioLogicaFake extends IntentService {
             JSONArray jsArray = new JSONArray(medicionesString);
             Log.d(ETIQUETA_LOG, "" + jsArray);//192.168.0.107:8080
             medicionesString.clear();//10.236.29.250
-            elPeticionario.hacerPeticionREST("POST",  "http://192.168.0.107:8080/mediciones",
+            elPeticionario.hacerPeticionREST("POST",  "http://10.236.29.250:8080/mediciones",
                     String.valueOf(jsArray),
                     new PeticionarioREST.RespuestaREST () {
                         @Override
@@ -209,7 +209,7 @@ public class ServicioLogicaFake extends IntentService {
         PeticionarioREST elPeticionario = new PeticionarioREST();
         //Direccion ip en UPVNET10.236.29.250
         //Direccion ip en casa 192.168.0.107
-        elPeticionario.hacerPeticionREST("GET",  "http://192.168.0.107:8080/ultimasMediciones/10", null,
+        elPeticionario.hacerPeticionREST("GET",  "http://10.236.29.250:8080/ultimasMediciones/10", null,
                 new PeticionarioREST.RespuestaREST () {
                     @Override
                     public void callback(int codigo, String cuerpo) {
