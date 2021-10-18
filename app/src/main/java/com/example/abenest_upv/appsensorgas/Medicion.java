@@ -13,7 +13,7 @@ import static java.lang.System.currentTimeMillis;
 
 public class Medicion {
 
-    private enum TipoMedida{CONCENTRACION_GAS, TEMPERATURA, HUMEDAD_RELATIVA};
+    private enum TipoMedida{GAS, TEMPERATURA, HUMEDAD};
     private TipoMedida tipo;
     private String nombreSensor, macSensor, uuidSensor;
     private int medida; //de moment serà un nº enter
@@ -96,17 +96,17 @@ public class Medicion {
     public void setTipo(int identificador) {
         switch (identificador) {
             case 11:
-                this.tipo = tipo.CONCENTRACION_GAS;
+                this.tipo = tipo.GAS;
                 break;
             case 12:
                 this.tipo = tipo.TEMPERATURA;
                 break;
             case 13:
-                this.tipo = tipo.HUMEDAD_RELATIVA;
+                this.tipo = tipo.HUMEDAD;
                 break;
             default:
-                // Como se ha cambiado el tipo CO2 por CONCENTRACION_GAS, poner default CONCENTRACION_GAS
-                this.tipo = tipo.CONCENTRACION_GAS;
+                // Como se ha cambiado el tipo CO2 por GAS, poner default GAS
+                this.tipo = tipo.GAS;
                 break;
         }
     }
@@ -122,16 +122,18 @@ public class Medicion {
      */
     public void setTipo(String tipoM) {
         switch (tipoM) {
-            case "CO2":
-                this.tipo = tipo.CONCENTRACION_GAS;
+            case "GAS":
+                this.tipo = tipo.GAS;
                 break;
             case "TEMPERATURA":
                 this.tipo = tipo.TEMPERATURA;
                 break;
-            case "HUMEDAD_RELATIVA":
-                this.tipo = tipo.HUMEDAD_RELATIVA;
+            case "HUMEDAD":
+                this.tipo = tipo.HUMEDAD;
                 break;
             default:
+                // Como se ha cambiado el tipo CO2 por GAS, poner default GAS
+                this.tipo = tipo.GAS;
                 break;
         }
     }

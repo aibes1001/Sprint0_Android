@@ -249,6 +249,9 @@ public class ServicioLogicaFake extends IntentService {
     /**
      * Clase InicializadorGetMediciones
      * Receptor de mensajes broadcast de tipo "Iniciar_GET_Mediciones"
+     * Se utilizará para forzar cargar las últimas mediciones desde Tab2 al recyclerView
+     * cuando entramos en esa pestaña por primera vez (y no tener que esperar a que en onHandleIntent
+     * actualize los valores)
      */
     private class InicializadorGetMediciones extends BroadcastReceiver {
 
